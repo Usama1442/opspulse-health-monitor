@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{{ app_name }}</title>
+  <meta name="description" content="A Flask app that monitors server health (CPU, memory, disk) with a live dashboard, health probes and Prometheus metrics.">
+  <meta name="theme-color" content="#070b1a">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+  <div class="orb orb-pink" aria-hidden="true"></div>
+  <div class="orb orb-cyan" aria-hidden="true"></div>
+  <div class="orb orb-purple" aria-hidden="true"></div>
+
+  <!-- Shared gradients for the ring gauges -->
+  <svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
+    <defs>
+      <linearGradient id="gradCpu" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#22d3ee"/><stop offset="1" stop-color="#3b82ff"/></linearGradient>
+      <linearGradient id="gradMem" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#c084fc"/><stop offset="1" stop-color="#f472b6"/></linearGradient>
+      <linearGradient id="gradDisk" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#fbbf24"/><stop offset="1" stop-color="#fb923c"/></linearGradient>
+      <linearGradient id="gradWarn" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#fb923c"/><stop offset="1" stop-color="#f43f5e"/></linearGradient>
+    </defs>
+  </svg>
+
+  <header class="topbar">
+    <div class="wrap topbar-inner">
+      <a class="logo" href="#top" aria-label="{{ app_name }}">
+        <span class="logo-mark" aria-hidden="true">
+          <svg viewBox="0 0 24 24" width="20" height="20"><path d="M3 12h4l2-6 4 12 2-6h6" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </span>
+        <span>Health Monitor</span>
+      </a>
+      <nav aria-label="Main navigation" class="topnav">
+        <a href="#dashboard">Dashboard</a>
+        <a href="#about">About</a>
+        <a href="#workflow">Workflow</a>
+        <a href="#endpoints">Endpoints</a>
+      </nav>
+      <div id="overall" class="status-pill" role="status" aria-live="polite"><span class="pulse"></span><span id="overall-text">Connecting</span></div>
+    </div>
+  </header>
+
+  <main id="top">
+    <!-- ============ HERO ============ -->
+    <section class="hero wrap">
+      <p class="hero-kicker">Python &middot; Flask &middot; DevOps practice project</p>
+      <h1>{{ app_name }}</h1>
+      <p class="hero-lead">
+        A live view of a server's health. It reads CPU, memory and disk from the operating system,
+        shows them on this dashboard, and exposes health, readiness and Prometheus endpoints for
+        the DevOps tools that come next.
+      </p>
+      <ul class="hero-chips">
+        <li class="chip c-cyan">Python</li>
+        <li class="chip c-blue">Flask</li>
+        <li class="chip c-purple">psutil</li>
+        <li class="chip c-pink">REST API</li>
+        <li class="chip c-amber">Prometheus-ready</li>
+        <li class="chip c-green">Unit tested</li>
+      </ul>
+      <p class="hero-meta">Version {{ version }} &middot; Environment: <strong>{{ environment }}</strong></p>
+    </section>
+
+    <!-- ============ LIVE DASHBOARD ============ -->
+    <section id="dashboard" class="wrap section">
+      <h2 class="section-title">Live dashboard</h2>
+      <p class="section-lead">Updates automatically every 3 seconds from <code>/api/status</code>.</p>
+
+      <div class="gauges">
+        <article class="card gauge" id="card-cpu" data-grad="gradCpu">
+          <h3>CPU usage</h3>
+          <svg class="ring" viewBox="0 0 120 120" role="img" aria-label="CPU usage ring">
+            <circle class="ring-bg" cx="60" cy="60" r="52"/>
+            <circle class="ring-fg" id="cpu-ring" cx="60" cy="60" r="52" stroke="url(#gradCpu)"/>
+            <text class="ring-text" id="cpu-value" x="60" y="66" text-anchor="middle">--</text>
+          </svg>
+          <p class="gauge-note" id="cpu-detail">Waiting for data</p>
+        </article>
+
+        <article class="card gauge" id="card-memory" data-grad="gradMem">
+          <h3>Memory usage</h3>
+          <svg class="ring" viewBox="0 0 120 120" role="img" aria-label="Memory usage ring">
+            <circle class="ring-bg" cx="60" cy="60" r="52"/>
+            <circle class="ring-fg" id="memory-ring" cx="60" cy="60" r="52" stroke="url(#gradMem)"/>
+            <text class="ring-text" id="memory-value" x="60" y="66" text-anchor="middle">--</text>
+          </svg>
+          <p class="gauge-note" id="memory-detail">Waiting for data</p>
+        </article>
+
+        <article class="card gauge" id="card-disk" data-grad="gradDisk">
+          <h3>Disk usage</h3>
+          <svg class="ring" viewBox="0 0 120 120" role="img" aria-label="Disk usage ring">
+            <circle class="ring-bg" cx="60" cy="60" r="52"/>
+            <circle class="ring-fg" id="disk-ring" cx="60" cy="60" r="52" stroke="url(#gradDisk)"/>
+            <text class="ring-text" id="disk-value" x="60" y="66" text-anchor="middle">--</text>
+          </svg>
+          <p class="gauge-note" id="disk-detail">Waiting for data</p>
+        </article>
+      </div>
+
+      <div class="dash-row">
+        <article class="card history">
+          <div class="history-head">
+            <h3>Recent history</h3>
+            <ul class="legend">
+              <li><span class="key key-cpu"></span>CPU</li>
+              <li><span class="key key-mem"></span>Memory</li>
+            </ul>
+          </div>
+          <svg class="spark" viewBox="0 0 300 90" preserveAspectRatio="none" role="img" aria-label="CPU and memory usage over the last readings">
+            <line x1="0" y1="22" x2="300" y2="22" class="grid"/>
+            <line x1="0" y1="45" x2="300" y2="45" class="grid"/>
+            <line x1="0" y1="68" x2="300" y2="68" class="grid"/>
+            <polyline id="line-mem" class="line line-mem" points=""/>
+            <polyline id="line-cpu" class="line line-cpu" points=""/>
+          </svg>
+          <p class="gauge-note" id="updated">Last 30 readings, about 90 seconds</p>
+        </article>
+
+        <article class="card stats">
+          <h3>System</h3>
+          <dl id="system-info" class="stat-grid"></dl>
+        </article>
+      </div>
+    </section>
+
+    <!-- ============ ABOUT ============ -->
+    <section id="about" class="wrap section">
+      <h2 class="section-title">About this project</h2>
+      <div class="about-grid">
+        <div class="about-text">
+          <p>
+            <strong>{{ app_name }}</strong> is a small web application that reports the health of the
+            server it runs on. It reads CPU, memory, disk, load and uptime from the operating system,
+            shows them on a live dashboard, and offers the same data through JSON, health, readiness
+            and Prometheus endpoints.
+          </p>
+          <p>
+            I built it as a practice project to learn how one application moves through the whole
+            DevOps toolchain: Git, CI, containers, infrastructure as code, cloud deployment and
+            monitoring. Each endpoint exists because a specific DevOps tool will use it later.
+          </p>
+          <p class="status-note">
+            <strong>Current status:</strong> the application, dashboard and unit tests are complete.
+            Docker, CI/CD, Terraform and AWS, Kubernetes and monitoring are planned next.
+          </p>
+
+          <h3 class="mini-title">Tech stack</h3>
+          <ul class="stack">
+            <li class="stack-item s-cyan"><strong>Python 3</strong><span>Application language</span></li>
+            <li class="stack-item s-blue"><strong>Flask</strong><span>Web framework and routes</span></li>
+            <li class="stack-item s-purple"><strong>psutil</strong><span>Reads system metrics</span></li>
+            <li class="stack-item s-pink"><strong>HTML, CSS, JavaScript</strong><span>Live dashboard, no libraries</span></li>
+            <li class="stack-item s-amber"><strong>unittest</strong><span>Automated tests</span></li>
+            <li class="stack-item s-green"><strong>gunicorn</strong><span>Production-style server</span></li>
+          </ul>
+        </div>
+
+        <div class="card build-card">
+          <h3>How it was built</h3>
+          <ol class="build-steps">
+            <li><strong>Flask skeleton.</strong> Created the app and the routes for the dashboard and API.</li>
+            <li><strong>Metric collection.</strong> A <code>collect_status()</code> function uses psutil to read CPU, memory, disk and load.</li>
+            <li><strong>Health logic.</strong> Thresholds come from environment variables. A metric above its limit is a warning, and the overall state becomes "degraded".</li>
+            <li><strong>Probe endpoints.</strong> <code>/health</code> and <code>/ready</code> for load balancers and Kubernetes, <code>/metrics</code> in Prometheus text format.</li>
+            <li><strong>Dashboard.</strong> JavaScript fetches <code>/api/status</code> every 3 seconds and redraws the rings and chart.</li>
+            <li><strong>Tests.</strong> Unit tests check every endpoint and the threshold logic, so a CI pipeline can run them.</li>
+          </ol>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ WORKFLOW ============ -->
+    <section id="workflow" class="wrap section">
+      <h2 class="section-title">Workflow</h2>
+
+      <h3 class="diagram-title">1. How the app works</h3>
+      <p class="section-lead">What happens when you open this page, and who else will use the app.</p>
+
+      <div class="diagram-scroll card">
+        <svg class="diagram" viewBox="0 0 960 400" role="img" aria-labelledby="d1-title d1-desc">
+          <title id="d1-title">Runtime workflow of the Health Monitor</title>
+          <desc id="d1-desc">The browser requests the page and polls /api/status. The Flask app calls collect_status, which uses psutil to read the Linux operating system. The health, ready and metrics endpoints are planned to be used by a load balancer or Kubernetes and by Prometheus.</desc>
+          <defs>
+            <marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z" fill="#8fa2ff"/></marker>
+          </defs>
+
+          <!-- Browser -->
+          <rect x="20" y="130" width="170" height="110" rx="16" class="node n-cyan"/>
+          <text x="105" y="170" class="d-title" text-anchor="middle">Browser</text>
+          <text x="105" y="194" class="d-sub" text-anchor="middle">Dashboard page</text>
+          <text x="105" y="214" class="d-sub" text-anchor="middle">HTML + CSS + JS</text>
+
+          <!-- Flask -->
+          <rect x="290" y="70" width="220" height="230" rx="16" class="node n-blue"/>
+          <text x="400" y="104" class="d-title" text-anchor="middle">Flask app</text>
+          <text x="400" y="124" class="d-sub" text-anchor="middle">app.py</text>
+          <rect x="310" y="140" width="180" height="26" rx="8" class="route"/><text x="400" y="158" class="d-mono" text-anchor="middle">GET /</text>
+          <rect x="310" y="172" width="180" height="26" rx="8" class="route"/><text x="400" y="190" class="d-mono" text-anchor="middle">GET /api/status</text>
+          <rect x="310" y="204" width="180" height="26" rx="8" class="route"/><text x="400" y="222" class="d-mono" text-anchor="middle">GET /health  /ready</text>
+          <rect x="310" y="236" width="180" height="26" rx="8" class="route"/><text x="400" y="254" class="d-mono" text-anchor="middle">GET /metrics</text>
+          <text x="400" y="286" class="d-sub" text-anchor="middle">collect_status()</text>
+
+          <!-- psutil -->
+          <rect x="600" y="140" width="130" height="90" rx="16" class="node n-purple"/>
+          <text x="665" y="178" class="d-title" text-anchor="middle">psutil</text>
+          <text x="665" y="200" class="d-sub" text-anchor="middle">Python library</text>
+
+          <!-- OS -->
+          <rect x="800" y="130" width="140" height="110" rx="16" class="node n-green"/>
+          <text x="870" y="168" class="d-title" text-anchor="middle">Linux OS</text>
+          <text x="870" y="192" class="d-sub" text-anchor="middle">CPU, RAM, disk</text>
+          <text x="870" y="212" class="d-sub" text-anchor="middle">load, uptime</text>
+
+          <!-- Main arrows -->
+          <path d="M190 170 H290" class="arrow" marker-end="url(#arr)"/>
+          <text x="240" y="160" class="d-label" text-anchor="middle">request</text>
+          <path d="M290 205 H190" class="arrow" marker-end="url(#arr)"/>
+          <text x="240" y="226" class="d-label" text-anchor="middle">JSON</text>
+          <path d="M510 185 H600" class="arrow" marker-end="url(#arr)"/>
+          <text x="555" y="175" class="d-label" text-anchor="middle">calls</text>
+          <path d="M730 185 H800" class="arrow" marker-end="url(#arr)"/>
+          <text x="765" y="175" class="d-label" text-anchor="middle">reads</text>
+
+          <!-- Polling note -->
+          <path d="M105 130 V62 Q105 42 125 42 H350 V68" class="arrow arrow-soft" marker-end="url(#arr)"/>
+          <text x="140" y="32" class="d-label">polls /api/status every 3 s</text>
+
+          <!-- Planned consumers -->
+          <rect x="130" y="326" width="280" height="62" rx="14" class="node planned"/>
+          <text x="270" y="353" class="d-title-sm" text-anchor="middle">Load balancer / Kubernetes</text>
+          <text x="270" y="375" class="d-sub" text-anchor="middle">health + readiness probes (planned)</text>
+          <rect x="500" y="326" width="280" height="62" rx="14" class="node planned"/>
+          <text x="640" y="353" class="d-title-sm" text-anchor="middle">Prometheus + Grafana</text>
+          <text x="640" y="375" class="d-sub" text-anchor="middle">scrape /metrics, alerts (planned)</text>
+          <path d="M350 300 L290 326" class="arrow arrow-dash" marker-end="url(#arr)"/>
+          <path d="M450 300 L600 326" class="arrow arrow-dash" marker-end="url(#arr)"/>
+        </svg>
+      </div>
+      <p class="diagram-key"><span class="key-solid"></span>Working now <span class="key-dash"></span>Planned</p>
+
+      <h3 class="diagram-title">2. DevOps pipeline roadmap</h3>
+      <p class="section-lead">The journey of this app from code to monitored deployment. Finished stages are solid, the rest are planned.</p>
+
+      <ol class="pipeline">
+        <li class="stage done"><span class="stage-tag">Done</span><strong>Code</strong><span>Flask app + dashboard</span></li>
+        <li class="stage done"><span class="stage-tag">Done</span><strong>Test</strong><span>Unit tests with unittest</span></li>
+        <li class="stage"><span class="stage-tag">Planned</span><strong>Git / GitHub</strong><span>Version control, pull requests</span></li>
+        <li class="stage"><span class="stage-tag">Planned</span><strong>CI</strong><span>GitHub Actions, Jenkins</span></li>
+        <li class="stage"><span class="stage-tag">Planned</span><strong>Docker</strong><span>Build and run the image</span></li>
+        <li class="stage"><span class="stage-tag">Planned</span><strong>Infrastructure</strong><span>Terraform on AWS (VPC, ALB, ASG)</span></li>
+        <li class="stage"><span class="stage-tag">Planned</span><strong>Deploy</strong><span>Ansible, EC2, Kubernetes</span></li>
+        <li class="stage"><span class="stage-tag">Planned</span><strong>Monitor</strong><span>Prometheus + Grafana</span></li>
+      </ol>
+    </section>
+
+    <!-- ============ ENDPOINTS ============ -->
+    <section id="endpoints" class="wrap section">
+      <h2 class="section-title">Endpoints</h2>
+      <p class="section-lead">Click any endpoint to try it.</p>
+      <div class="card table-card">
+        <table>
+          <thead><tr><th>Endpoint</th><th>What it returns</th><th>Used by</th></tr></thead>
+          <tbody>
+            <tr><td><span class="method">GET</span> <a href="/">/</a></td><td>This dashboard</td><td>You</td></tr>
+            <tr><td><span class="method">GET</span> <a href="/api/status">/api/status</a></td><td>Full system status as JSON</td><td>Dashboard, scripts, Ansible</td></tr>
+            <tr><td><span class="method">GET</span> <a href="/health">/health</a></td><td>Liveness: 200 if the app is running</td><td>Load balancer, Docker, Kubernetes (planned)</td></tr>
+            <tr><td><span class="method">GET</span> <a href="/ready">/ready</a></td><td>Readiness: 503 if CPU or RAM is 95% or more</td><td>Kubernetes, deployments (planned)</td></tr>
+            <tr><td><span class="method">GET</span> <a href="/metrics">/metrics</a></td><td>Prometheus text format</td><td>Prometheus, Grafana (planned)</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <div class="wrap footer-inner">
+      <p>Built by <strong>Usama Gohar</strong> as a hands-on DevOps practice project.</p>
+      <p><a href="https://github.com/Usama1442" target="_blank" rel="noopener noreferrer">GitHub</a> &middot; <a href="https://linkedin.com/in/usama-gohar-a33a35339" target="_blank" rel="noopener noreferrer">LinkedIn</a></p>
+    </div>
+  </footer>
+
+  <script src="{{ url_for('static', filename='app.js') }}"></script>
+</body>
+</html>
