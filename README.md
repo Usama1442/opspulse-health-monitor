@@ -6,8 +6,10 @@ endpoints so that each DevOps tool has a real job to do with it.
 
 > **Status:** the application, dashboard and unit tests are complete. Docker, CI/CD,
 > Terraform + AWS, Kubernetes and monitoring are planned next, as hands-on DevOps tasks.
+> PR CREATE 
 
 2  What it does
+
 
 - Reads CPU, memory, disk, load average and uptime using **psutil**
 - Shows them on a live dashboard (ring gauges, history chart, system info) that refreshes every 3 seconds
