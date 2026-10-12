@@ -1,4 +1,4 @@
-# DevOps Health Monitor
+## DevOps Health Monitor
 
 A Flask web app that reports the health of the server it runs on (CPU, memory, disk, load,
 uptime) on a colourful live dashboard. It also exposes health, readiness and Prometheus
