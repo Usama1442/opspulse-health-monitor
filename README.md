@@ -1,5 +1,8 @@
 ###
 ### DevOps Health Monitor
+=======
+1 DevOps Health Monitor
+>>>>>>> 10f765863274d0b220291439011239eb42ea0711
 
 A Flask web app that reports the health of the server it runs on (CPU, memory, disk, load,
 uptime) on a colourful live dashboard. It also exposes health, readiness and Prometheus
@@ -7,8 +10,13 @@ endpoints so that each DevOps tool has a real job to do with it.
 
 > **Status:** the application, dashboard and unit tests are complete. Docker, CI/CD,
 > Terraform + AWS, Kubernetes and monitoring are planned next, as hands-on DevOps tasks.
-__________________________________-__------------------------------------
 ## What it does
+=======
+> PR CREATE 
+
+2  What it does
+
+>>>>>>> 10f765863274d0b220291439011239eb42ea0711
 
 - Reads CPU, memory, disk, load average and uptime using **psutil**
 - Shows them on a live dashboard (ring gauges, history chart, system info) that refreshes every 3 seconds
