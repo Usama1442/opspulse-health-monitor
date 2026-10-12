@@ -1,3 +1,4 @@
+## Hi Health Monitor App
 ## DevOps Health Monitor
 
 A Flask web app that reports the health of the server it runs on (CPU, memory, disk, load,
@@ -143,7 +144,11 @@ health-monitor/
 │   └── app.js              # Polls /api/status, draws rings and chart
 └── tests/test_app.py
 ```
+## Recent Improvements
 
+- Improved project documentation.
+- Added details about application features.
+- Updated project setup instructions.
 ## Author
 
 **Usama Gohar** | [GitHub](https://github.com/Usama1442) | [LinkedIn](https://linkedin.com/in/usama-gohar-a33a35339)
