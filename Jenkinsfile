@@ -23,6 +23,14 @@ pipeline {
                 '''
             }
         }
+
+        stage('Docker Build') {
+            steps {
+                sh '''
+                    docker build -t opspulse-health-monitor:1.0 .
+                '''
+            }
+        }
     }
 }
 
