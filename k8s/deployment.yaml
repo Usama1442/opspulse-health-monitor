@@ -1,0 +1,29 @@
+
+apiVersion: apps/v1
+kind: Deployment
+
+metadata:
+  name: opspulse
+  labels:
+    app: opspulse
+
+spec:
+  replicas: 2
+
+  selector:
+    matchLabels:
+      app: opspulse
+
+  template:
+    metadata:
+      labels:
+        app: opspulse
+
+    spec:
+      containers:
+        - name: opspulse
+          image: opspulse-health-monitor-opspulse:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 5000
+

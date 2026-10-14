@@ -1,0 +1,18 @@
+
+apiVersion: v1
+kind: Service
+
+metadata:
+  name: opspulse-service
+
+spec:
+  type: ClusterIP
+
+  selector:
+    app: opspulse
+
+  ports:
+    - port: 5000
+      targetPort: 5000
+      protocol: TCP
+

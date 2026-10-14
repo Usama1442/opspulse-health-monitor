@@ -1,0 +1,6 @@
+services:
+  opspulse:
+    build: .
+    container_name: opspulse-container
+    ports:
+      - "5000:5000"

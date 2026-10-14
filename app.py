@@ -1,3 +1,4 @@
+
 """
 DevOps Health Monitor (Flask)
 
@@ -30,8 +31,7 @@ APP_NAME = "DevOps Health Monitor"
 APP_VERSION = os.getenv("APP_VERSION", "1.0.0")
 APP_ENV = os.getenv("APP_ENV", "development")
 PORT = int(os.getenv("PORT", "5000"))
-HOST = os.getenv("HOST", "127.0.0.1")
-
+HOST = os.getenv("HOST", "0.0.0.0")
 # A metric above its threshold (in %) is reported as "warning"
 CPU_THRESHOLD = float(os.getenv("CPU_THRESHOLD", "80"))
 MEMORY_THRESHOLD = float(os.getenv("MEMORY_THRESHOLD", "80"))
