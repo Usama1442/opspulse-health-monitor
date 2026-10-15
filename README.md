@@ -1,152 +1,228 @@
-## DevOps Health Monitor
+# OpsPulse Health Monitor
 
-A Flask web app that reports the health of the server it runs on (CPU, memory, disk, load,
-uptime) on a colourful live dashboard. It also exposes health, readiness and Prometheus
-endpoints so that each DevOps tool has a real job to do with it.
+A DevOps portfolio project that monitors server health through a live web dashboard and demonstrates application deployment using Docker, Terraform, AWS EC2, Nginx, and Gunicorn.
 
-> **Status:** the application, dashboard and unit tests are complete. Docker, CI/CD,
-> Terraform + AWS, Kubernetes and monitoring are planned next, as hands-on DevOps tasks.
+**Author:** Usama Gohar  
+**GitHub:** [Usama1442](https://github.com/Usama1442)  
+**Repository:** [opspulse-health-monitor](https://github.com/Usama1442/opspulse-health-monitor)  
+**LinkedIn:** [Usama Gohar](https://linkedin.com/in/usama-gohar-a33a35339)
 
-## What it does
+---
 
-- Reads CPU, memory, disk, load average and uptime using **psutil**
-- Shows them on a live dashboard (ring gauges, history chart, system info) that refreshes every 3 seconds
-- Marks a metric as a **warning** when it passes a configurable threshold, and the overall state as **degraded**
-- Provides `/health`, `/ready` and `/metrics` endpoints for load balancers, Kubernetes and Prometheus
+## Project Overview
 
-## How it was built
+OpsPulse Health Monitor is a Python Flask application that collects system metrics and displays them on a live dashboard. It monitors CPU usage, memory, disk utilization, system load, and uptime.
 
-1. **Flask skeleton:** created the app and the routes for the dashboard and API.
-2. **Metric collection:** a `collect_status()` function uses psutil to read CPU, memory, disk and load.
-3. **Health logic:** thresholds come from environment variables. A metric above its limit is a warning, and the overall state becomes "degraded".
-4. **Probe endpoints:** `/health` and `/ready` for load balancers and Kubernetes, `/metrics` in Prometheus text format.
-5. **Dashboard:** vanilla JavaScript fetches `/api/status` every 3 seconds and redraws the rings and the chart.
-6. **Tests:** unit tests check every endpoint and the threshold logic, so a CI pipeline can run them.
+The project is also used to practice DevOps workflows, including Linux administration, Git/GitHub, Docker, infrastructure provisioning with Terraform, AWS deployment, and configuration management.
 
-## Workflow diagrams
+## Features
 
-### 1. How the app works
+- Live dashboard for server health and system metrics.
+- CPU, memory, disk, load average, and uptime monitoring.
+- Configurable thresholds for detecting resource warnings.
+- JSON status API for application and system information.
+- Health and readiness endpoints for deployment checks.
+- Prometheus-format metrics endpoint.
+- Unit tests for application endpoints and health logic.
+- Docker configuration for containerized execution.
+- Terraform configuration for AWS EC2 infrastructure.
+- Nginx reverse proxy with Gunicorn application serving.
+
+## Technology Stack
+
+| Category | Technology |
+|---|---|
+| Application | Python, Flask |
+| System metrics | psutil |
+| Frontend | HTML, CSS, JavaScript |
+| Application server | Gunicorn |
+| Web server / reverse proxy | Nginx |
+| Testing | Python unittest |
+| Version control | Git, GitHub |
+| Containerization | Docker |
+| Cloud | AWS EC2 |
+| Infrastructure as Code | Terraform |
+| Additional DevOps work | Kubernetes, Ansible, Jenkins |
+
+## Architecture
 
 ```mermaid
-flowchart LR
-    B["Browser<br/>Dashboard (HTML, CSS, JS)"] -- "request" --> F
-    F -- "JSON" --> B
-    subgraph F["Flask app (app.py)"]
-        R1["GET /"]
-        R2["GET /api/status"]
-        R3["GET /health, /ready"]
-        R4["GET /metrics"]
-        C["collect_status()"]
-    end
-    F -- "calls" --> P["psutil"]
-    P -- "reads" --> O["Linux OS<br/>CPU, RAM, disk, load"]
-    F -. "planned" .-> K["Load balancer / Kubernetes<br/>probes"]
-    F -. "planned" .-> M["Prometheus + Grafana<br/>scrape /metrics"]
+flowchart TD
+    A[User Browser] --> B[Nginx - HTTP Port 80]
+    B --> C[Gunicorn - Port 5000]
+    C --> D[Flask Application]
+    D --> E[psutil]
+    E --> F[Linux System Metrics]
+    D --> G[Health and Readiness Endpoints]
+    D --> H[Prometheus Metrics Endpoint]
+    I[Terraform] --> J[AWS EC2 Instance]
+    I --> K[AWS Security Group]
+    J --> B
 ```
 
-### 2. DevOps pipeline roadmap
+The application runs behind Gunicorn, while Nginx accepts HTTP requests and forwards them to the application. Terraform provisions the AWS infrastructure used for the deployment.
 
-```mermaid
-flowchart LR
-    A["Code<br/>Flask app (done)"] --> T["Test<br/>unittest (done)"]
-    T -.-> G["Git / GitHub"]
-    G -.-> CI["CI<br/>GitHub Actions, Jenkins"]
-    CI -.-> D["Docker<br/>build image"]
-    D -.-> I["Infrastructure<br/>Terraform on AWS"]
-    I -.-> DEP["Deploy<br/>Ansible, EC2, Kubernetes"]
-    DEP -.-> MON["Monitor<br/>Prometheus + Grafana"]
-```
+## Application Endpoints
 
-Solid arrows are finished. Dotted arrows are planned.
+| Endpoint | Purpose |
+|---|---|
+| `/` | Opens the monitoring dashboard |
+| `/api/status` | Returns current system status in JSON |
+| `/health` | Checks whether the application is responding |
+| `/ready` | Reports application readiness based on configured checks |
+| `/metrics` | Exposes metrics in Prometheus text format |
 
-## Endpoints
+## Run Locally on Ubuntu
 
-| URL | Purpose | Used by |
-|---|---|---|
-| `/` | Live dashboard | You, in the browser |
-| `/api/status` | Full status as JSON | Dashboard, scripts, Ansible |
-| `/health` | Liveness check, 200 if the app runs | Load balancer, Docker, Kubernetes (planned) |
-| `/ready` | Readiness check, 503 if CPU or RAM is 95% or more | Kubernetes, deployments (planned) |
-| `/metrics` | Prometheus text format | Prometheus, Grafana (planned) |
+### Prerequisites
 
-## Run locally (Ubuntu)
+- Python 3
+- Git
+- pip and Python virtual environment support
+
+### Installation
+
+Clone the repository:
 
 ```bash
-cd health-monitor
-python3 -m venv venv
-source venv/bin/activate
+git clone https://github.com/Usama1442/opspulse-health-monitor.git
+cd opspulse-health-monitor
+```
+
+Create and activate a virtual environment:
+
+```bash
+python3 -m venv .venv
+source .venv/bin/activate
+```
+
+Install dependencies:
+
+```bash
 pip install -r requirements.txt
+```
+
+Start the application:
+
+```bash
 python app.py
 ```
 
-Open http://127.0.0.1:5000
+Open the dashboard at:
 
-## Run the tests
+`http://127.0.0.1:5000`
+
+## Run the Tests
+
+Run the unit tests from the project root:
 
 ```bash
 python -m unittest discover -s tests -v
 ```
 
-## Configuration (environment variables)
+The tests cover application endpoints and health-check logic.
 
-| Variable | Default | Meaning |
-|---|---|---|
-| `PORT` | `5000` | Port to listen on |
-| `HOST` | `127.0.0.1` | Use `0.0.0.0` inside Docker or on servers |
-| `APP_ENV` | `development` | Shown on the dashboard (dev / staging / prod) |
-| `APP_VERSION` | `1.0.0` | Shown on the dashboard, can be set from CI |
-| `CPU_THRESHOLD` | `80` | Warning level in % |
-| `MEMORY_THRESHOLD` | `80` | Warning level in % |
-| `DISK_THRESHOLD` | `85` | Warning level in % |
-| `LOG_LEVEL` | `INFO` | Logging level |
+## Docker
 
-Example: `PORT=8080 APP_ENV=staging python app.py`
+The repository includes a Dockerfile and Docker Compose configuration for containerized execution.
 
-## Production-style start (gunicorn)
+Docker is used to package the application and its dependencies into a portable container.
+
+Build and run instructions should be kept aligned with the current Dockerfile and `compose.yaml`.
+
+## AWS Deployment with Terraform
+
+The project includes Terraform configuration for provisioning AWS resources.
+
+### Infrastructure
+
+- **EC2:** Ubuntu-based virtual server running the application.
+- **Security Group:** Allows inbound HTTP traffic on port 80.
+- **Gunicorn:** Serves the Flask application internally on port 5000.
+- **Nginx:** Acts as a reverse proxy from port 80 to Gunicorn.
+
+### Deployment workflow
 
 ```bash
-gunicorn -w 2 -b 0.0.0.0:5000 app:app
+cd terraform
+terraform init
+terraform validate
+terraform plan
+terraform apply
 ```
 
-## DevOps learning roadmap
+Review the plan before approving resource creation. Terraform will ask for confirmation before applying changes.
 
-| # | Tool | Task |
-|---|---|---|
-| 1 | **Git / GitHub** | Push the project, use feature branches and pull requests |
-| 2 | **Linux / Bash** | Run it on Ubuntu, write a Bash script that curls `/health`, create a systemd service |
-| 3 | **Docker** | Write a `Dockerfile` using gunicorn, build the image, run with `-e` variables and `-p` ports |
-| 4 | **GitHub Actions** | Run the tests on every push, then build the Docker image |
-| 5 | **Jenkins** | Build the same pipeline: checkout, test, build image, push to Docker Hub |
-| 6 | **Terraform** | Reuse the VPC + ALB + ASG project and set the ALB health check path to `/health` |
-| 7 | **AWS** | Run the container on EC2, then try ECR for image storage |
-| 8 | **Ansible** | Playbook that installs Docker on the servers and runs the container |
-| 9 | **Kubernetes** | Deployment + Service, with `/health` as liveness and `/ready` as readiness probes |
-| 10 | **Prometheus + Grafana** | Scrape `/metrics`, build a dashboard, set an alert for high CPU |
+### Cleanup
 
-Tip: after each step, add a short section here with a screenshot. It becomes portfolio proof.
+When the infrastructure is no longer needed:
 
-## Tech stack
-
-Python | Flask | psutil | HTML5 | CSS3 | JavaScript | unittest | gunicorn
-
-## Project structure
-
+```bash
+terraform destroy
 ```
-health-monitor/
-├── app.py                  # Flask app, metric collection and routes
+
+Review the deletion plan and confirm it before proceeding.
+
+**Cost note:** AWS resources can incur charges while running. Destroying Terraform-managed resources removes those resources, but previously accrued charges and charges from other active resources may remain.
+
+**Current deployment status:** The EC2 deployment was successfully created and the website was verified in a browser. The resources were subsequently destroyed to avoid ongoing infrastructure costs. The website is therefore not currently hosted on that EC2 instance.
+
+## Repository Structure
+
+```text
+opspulse-health-monitor/
+├── app.py
 ├── requirements.txt
-├── .gitignore
-├── README.md
-├── templates/index.html    # Dashboard, about section, workflow diagrams
+├── requirements-dev.txt
+├── Dockerfile
+├── compose.yaml
+├── Jenkinsfile
+├── ansible/
+├── k8s/
+├── screenshots/
 ├── static/
-│   ├── style.css
-│   └── app.js              # Polls /api/status, draws rings and chart
-└── tests/test_app.py
+├── templates/
+├── tests/
+├── terraform/
+├── .dockerignore
+├── .gitignore
+├── .flake8
+└── README.md
 ```
+
+## DevOps Roadmap
+
+- [x] Build the Flask monitoring application and dashboard.
+- [x] Add health, readiness, and metrics endpoints.
+- [x] Add application tests.
+- [x] Create Terraform configuration for AWS infrastructure.
+- [x] Deploy the application to AWS EC2 and verify browser access.
+- [x] Destroy the AWS resources after testing.
+- [x] Push the project and Terraform configuration to GitHub.
+- [ ] Verify the final Docker build and container workflow.
+- [ ] Verify Kubernetes deployment and service behavior.
+- [ ] Configure and verify an automated CI/CD pipeline.
+- [ ] Complete Ansible deployment automation.
+- [ ] Integrate Prometheus and Grafana for metrics visualization and alerting.
+- [ ] Add deployment screenshots and final test results.
+
+## Learning Outcomes
+
+This project provides hands-on practice with:
+
+- Linux application deployment and service management.
+- Git and GitHub version control.
+- Python application testing.
+- Docker containerization.
+- Terraform infrastructure provisioning.
+- AWS EC2 and Security Group configuration.
+- Nginx reverse proxy and Gunicorn.
+- Kubernetes health probes and deployment concepts.
+- CI/CD and monitoring concepts.
 
 ## Author
 
-**Usama Gohar** | [GitHub](https://github.com/Usama1442) | [LinkedIn](https://linkedin.com/in/usama-gohar-a33a35339)
+**Usama Gohar**
 
-< Jenkins polling test -->
-< Poll SCM verification -->
+- GitHub: https://github.com/Usama1442
+- LinkedIn: https://linkedin.com/in/usama-gohar-a33a35339
